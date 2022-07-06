@@ -29,7 +29,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 mongoose
-  .connect("mongodb://localhost:27017/secretsDB")
+  .connect(process.env.MONGODB_URL)
   .then(() => console.log("db connected!"))
   .catch((err) => console.log(err));
 
@@ -56,13 +56,11 @@ passport.deserializeUser(function (user, done) {
   done(null, user);
 });
 
-// https://secrets-gaurab.herokuapp.com
-
 const gStrategy = new GoogleStrategy(
   {
     clientID: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
-    callbackURL: "http://localhost:3000/auth/google/secrets",
+    callbackURL: "https://secrets-gaurab.herokuapp.com/auth/google/secrets",
     userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo",
   },
   function (accessToken, refreshToken, profile, cb) {
@@ -77,10 +75,10 @@ const fStrategy = new FacebookStrategy(
   {
     clientID: process.env.FACEBOOK_APP_ID,
     clientSecret: process.env.FACEBOOK_APP_SECRET,
-    callbackURL: "http://localhost:3000/auth/facebook/secrets"
+    callbackURL: "https://secrets-gaurab.herokuapp.com/auth/facebook/secrets"
   },
   function(accessToken, refreshToken, profile, cb) {
-    console.log(profile);
+    // console.log(profile);
     User.findOrCreate({ facebookId: profile.id }, function (err, user) {
       return cb(err, user);
     });
@@ -90,6 +88,7 @@ const fStrategy = new FacebookStrategy(
 if (process.env.IS_PROXY) {
   const agent = new HttpsProxyAgent("http://172.16.199.40:8080");
   gStrategy._oauth2.setAgent(agent);
+  fStrategy._oauth2.setAgent(agent);
 }
 
 passport.use(gStrategy);
@@ -138,7 +137,7 @@ app.get("/secrets", function (req, res) {
       console.log(err);
     } else {
       if (foundUsers) {
-        console.log(foundUsers);
+        // console.log(foundUsers);
         res.render("secrets", { usersWithSecrets: foundUsers });
       }
     }
